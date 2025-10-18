@@ -357,6 +357,53 @@
         let charts = {};
         let mapData = {};
 
+                // === ISO helpers (countries only) ===
+        // split comma/semicolon lists like "TR, GR; IL"
+        function splitList(val) {
+          return (val || '')
+            .toString()
+            .split(/[;,]/)
+            .map(s => s.trim())
+            .filter(Boolean);
+        }
+        
+        // Full country name from ISO2 (e.g., 'TR' -> 'Türkiye')
+        function iso2ToFullName(iso2) {
+          try {
+            const up = (iso2 || '').toString().trim().toUpperCase();
+            if (!/^[A-Z]{2}$/.test(up)) return null;
+            return regionNames.of(up) || null; // regionNames is already defined in <head>
+          } catch (e) { return null; }
+        }
+        
+        // Build unique set of countries from ISO2_list (supports multi-codes per row)
+        function listCountriesFromData(rows) {
+          const iso2Set = new Set();
+          rows.forEach(r => {
+            const iso2s = splitList(r.ISO2_list || r.ISO2_List);
+            iso2s.forEach(code2 => {
+              const up = (code2 || '').toUpperCase();
+              if (/^[A-Z]{2}$/.test(up)) iso2Set.add(up);
+            });
+          });
+          const arr = Array.from(iso2Set).map(code2 => ({
+            iso2: code2,
+            name: iso2ToFullName(code2) || code2
+          }));
+          arr.sort((a, b) => a.name.localeCompare(b.name));
+          return arr;
+        }
+        
+        // Filter rows that contain a given ISO2 in ISO2_list
+        function filterByISO2(rows, iso2) {
+          const target = (iso2 || '').toUpperCase();
+          return rows.filter(r => {
+            const list = splitList(r.ISO2_list || r.ISO2_List).map(x => x.toUpperCase());
+            return list.includes(target);
+          });
+        }
+        
+
         // Emotion to color mapping
         const emotionColors = {
             'Anger': '#ef4444',
