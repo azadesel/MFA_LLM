@@ -449,7 +449,7 @@
                     // Convert to JSON
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
                     
-                    globalData = jsonData.filter(row => row.date && row.Actor_clean);
+                    globalData = jsonData.filter(row => row.date && row.Actor);
                     processData();
                     document.getElementById('uploadSection').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
@@ -462,7 +462,7 @@
                     delimiter: fileName.endsWith('.csv') ? ',' : '\t',
                     encoding: 'UTF-8',
                     complete: function(results) {
-                        globalData = results.data.filter(row => row.date && row.Actor_clean);
+                        globalData = results.data.filter(row => row.date && row.Actor);
                         processData();
                         document.getElementById('uploadSection').classList.add('hidden');
                         document.getElementById('mainContent').classList.remove('hidden');
@@ -510,7 +510,7 @@
             // Group data by actor
             actorData = {};
             globalData.forEach(row => {
-                const actor = row.Actor_clean;
+                const actor = row.Actor;
                 if (!actorData[actor]) {
                     actorData[actor] = [];
                 }
