@@ -15,6 +15,11 @@
         .chart-container { position: relative; height: 400px; }
     </style>
 </head>
+    <script>
+  // Enables browser-native country names from ISO2 codes (e.g., TR -> Türkiye)
+  const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+</script>
+
 <body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
     
     <!-- Header -->
@@ -844,88 +849,100 @@
 
             document.getElementById('actorEventsList').innerHTML = html;
         }
-
+        
         function populateCompareDropdowns() {
-            const actors = Object.keys(actorData).sort();
-            const options = actors.map(a => `<option value="${a}">${a}</option>`).join('');
-            document.getElementById('compareActor1').innerHTML += options;
-            document.getElementById('compareActor2').innerHTML += options;
+            const countries = listCountriesFromData(globalData); // build from ISO2_list
+            const options = ['<option value="">Select Country</option>']
+              .concat(countries.map(c => `<option value="${c.iso2}">${c.name}</option>`))
+              .join('');
+        
+            // fill BOTH dropdowns with country names (values are ISO2)
+            document.getElementById('compareActor1').innerHTML = options;
+            document.getElementById('compareActor2').innerHTML = options;
+        
+            // Optional: rename the section title from "Actors" to "Countries"
+            const title = document.querySelector('#view-comparison h3');
+            if (title) title.textContent = 'Select Countries to Compare';
         }
+        
 
         function compareActors() {
-            const actor1 = document.getElementById('compareActor1').value;
-            const actor2 = document.getElementById('compareActor2').value;
-            
-            if (!actor1 || !actor2) {
-                alert('Please select both actors');
+            const iso2a = document.getElementById('compareActor1').value;
+            const iso2b = document.getElementById('compareActor2').value;
+        
+            if (!iso2a || !iso2b) {
+                alert('Please select both countries');
                 return;
             }
-
-            const events1 = actorData[actor1];
-            const events2 = actorData[actor2];
-
-            // Emotion comparison - handle comma-separated emotions
-            const emotions1 = {};
-            const emotions2 = {};
-            
-            events1.forEach(e => {
-                const emotionStr = e.Final_Label || '';
-                const emotionList = emotionStr.split(',').map(em => em.trim()).filter(em => em);
-                emotionList.forEach(emotion => {
-                    emotions1[emotion] = (emotions1[emotion] || 0) + 1;
+        
+            // Use ISO2_list (supports multi-country rows)
+            const rowsA = filterByISO2(globalData, iso2a);
+            const rowsB = filterByISO2(globalData, iso2b);
+        
+            // --- Emotion comparison (multi-label aware) ---
+            const countEmotions = rows => {
+                const acc = {};
+                rows.forEach(e => {
+                    (e.Final_Label || '')
+                      .toString()
+                      .split(',')
+                      .map(x => x.trim())
+                      .filter(Boolean)
+                      .forEach(em => acc[em] = (acc[em] || 0) + 1);
                 });
-            });
-            
-            events2.forEach(e => {
-                const emotionStr = e.Final_Label || '';
-                const emotionList = emotionStr.split(',').map(em => em.trim()).filter(em => em);
-                emotionList.forEach(emotion => {
-                    emotions2[emotion] = (emotions2[emotion] || 0) + 1;
-                });
-            });
-
-            const allEmotions = [...new Set([...Object.keys(emotions1), ...Object.keys(emotions2)])];
-
+                return acc;
+            };
+        
+            const emoA = countEmotions(rowsA);
+            const emoB = countEmotions(rowsB);
+            const allEmos = [...new Set([...Object.keys(emoA), ...Object.keys(emoB)])];
+        
             createChart('compareEmotionChart', 'bar', {
-                labels: allEmotions,
+                labels: allEmos,
                 datasets: [
                     {
-                        label: actor1,
-                        data: allEmotions.map(e => emotions1[e] || 0),
+                        label: iso2ToFullName(iso2a) || iso2a,
+                        data: allEmos.map(e => emoA[e] || 0),
                         backgroundColor: 'rgba(99, 102, 241, 0.8)'
                     },
                     {
-                        label: actor2,
-                        data: allEmotions.map(e => emotions2[e] || 0),
+                        label: iso2ToFullName(iso2b) || iso2b,
+                        data: allEmos.map(e => emoB[e] || 0),
                         backgroundColor: 'rgba(236, 72, 153, 0.8)'
                     }
                 ]
             });
-
-            // Category comparison
-            const cats1 = {};
-            const cats2 = {};
-            events1.forEach(e => cats1[e.Supercluster] = (cats1[e.Supercluster] || 0) + 1);
-            events2.forEach(e => cats2[e.Supercluster] = (cats2[e.Supercluster] || 0) + 1);
-
-            const allCats = [...new Set([...Object.keys(cats1), ...Object.keys(cats2)])];
-
+        
+            // --- Category comparison ---
+            const countCats = rows => {
+                const acc = {};
+                rows.forEach(e => {
+                    const c = e.Supercluster;
+                    if (c) acc[c] = (acc[c] || 0) + 1;
+                });
+                return acc;
+            };
+        
+            const catA = countCats(rowsA);
+            const catB = countCats(rowsB);
+            const allCats = [...new Set([...Object.keys(catA), ...Object.keys(catB)])];
+        
             createChart('compareCategoryChart', 'bar', {
                 labels: allCats,
                 datasets: [
                     {
-                        label: actor1,
-                        data: allCats.map(c => cats1[c] || 0),
+                        label: iso2ToFullName(iso2a) || iso2a,
+                        data: allCats.map(c => catA[c] || 0),
                         backgroundColor: 'rgba(16, 185, 129, 0.8)'
                     },
                     {
-                        label: actor2,
-                        data: allCats.map(c => cats2[c] || 0),
+                        label: iso2ToFullName(iso2b) || iso2b,
+                        data: allCats.map(c => catB[c] || 0),
                         backgroundColor: 'rgba(245, 158, 11, 0.8)'
                     }
                 ]
             }, { indexAxis: 'y' });
-
+        
             document.getElementById('comparisonResults').classList.remove('hidden');
         }
 
