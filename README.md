@@ -1,2 +1,2 @@
 # MFA_LLM
-This code helps researchers to label diplomatic press releases with the relevant information using OPENAI API
+This code helps no one but me; builds a website that analyzes my dataset. 
