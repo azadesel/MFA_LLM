@@ -993,22 +993,28 @@
         }
 
         function showView(view) {
-            // Hide all views
-            document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
-            
-            // Show selected view
-            document.getElementById('view-' + view).classList.remove('hidden');
-
-            // Update tabs
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active-tab', 'text-white');
-                btn.classList.add('text-slate-700');
-            });
-            const activeTab = document.getElementById('tab-' + view);
-            if (activeTab) {
-                activeTab.classList.add('active-tab', 'text-white');
-                activeTab.classList.remove('text-slate-700');
-            }
+          // Hide all
+          document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
+        
+          // Show selected
+          document.getElementById('view-' + view).classList.remove('hidden');
+        
+          // Tab styling
+          document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active-tab', 'text-white');
+            btn.classList.add('text-slate-700');
+          });
+        
+          const activeTab = document.getElementById('tab-' + view);
+          if (activeTab) {
+            activeTab.classList.add('active-tab', 'text-white');
+            activeTab.classList.remove('text-slate-700');
+          }
+        
+          // 🔥 IMPORTANT FIX
+          if (view === 'timeline') {
+            createGlobalTimeline();
+          }
         }
 
         function showActorTab(tab) {
